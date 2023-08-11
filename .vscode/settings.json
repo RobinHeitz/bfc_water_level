@@ -1,0 +1,18 @@
+{
+    "python.linting.enabled": false,
+    "python.languageServer": "Pylance",
+    "python.analysis.typeCheckingMode": "basic",
+    "micropico.syncFolder": "",
+    "python.analysis.typeshedPaths": [
+        ".vscode/Pico-W-Stub"
+    ],
+    "python.analysis.extraPaths": [
+        ".vscode/Pico-W-Stub/stubs"
+    ],
+    "python.linting.prospectorEnabled": false,
+    "python.linting.pylintEnabled": true,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "python.formatting.provider": "none"
+}
