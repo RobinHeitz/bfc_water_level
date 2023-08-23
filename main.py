@@ -1,21 +1,25 @@
 import micropython
 import utime
 from machine import Pin
+from helpers.read_config import read_config
 
 micropython.alloc_emergency_exception_buf(100)
 
-TOGGLE_GREEN_LT = 0.1
-TOGGLE_RED_GT = 0.2
-THRESHOLD = 0.02
+# TOGGLE_GREEN_LT = 0.1
+# TOGGLE_RED_GT = 0.2
+# THRESHOLD = 0.02
+
+TOGGLE_GREEN_LT_KEY = "TOGGLE_GREEN_LT"
+TOGGLE_RED_GT_KEY = "TOGGLE_RED_GT"
+THRESHOLD_KEY = "THRESHOLD"
 
 # Pin 1,2,4
-RED_GPIO = 0
+RED_GPIO = 2
 YELLOW_GPIO = 1
-GREEN_GPIO = 2
+GREEN_GPIO = 0
 
-# Pin 9 / 10
-TRIGGER_GPIO = 6
-ECHO_GPIO = 7
+TRIGGER_GPIO = 28
+ECHO_GPIO = 22
 
 SOUND_VELOCITY_M_S = 343
 
@@ -64,7 +68,7 @@ def switch_to(target_light):
     for light in lights:
         light.value(light == target_light)
 
-def update_lights(distance_m):
+def update_lights(distance_m, TOGGLE_GREEN_LT, TOGGLE_RED_GT, THRESHOLD):
     if distance_m < TOGGLE_GREEN_LT:
         switch_to(green)
 
@@ -79,15 +83,19 @@ def update_lights(distance_m):
         switch_to(red)
 
 
-def main():
+def main(config):
     sensor = UltrasonicDistanceMeasurement()
+
+    TOGGLE_GREEN_LT = config.get(TOGGLE_GREEN_LT_KEY, 0.1)
+    TOGGLE_RED_GT = config.get(TOGGLE_RED_GT_KEY, 0.2)
+    THRESHOLD = config.get(THRESHOLD_KEY, 0.02)
 
     try:
         while True:
             sensor.start_measurement()
             while sensor.distance_m is None:
                 pass
-            update_lights(sensor.distance_m)
+            update_lights(sensor.distance_m, TOGGLE_GREEN_LT, TOGGLE_RED_GT, THRESHOLD)
             utime.sleep_ms(20)
     except KeyboardInterrupt:
         pass
@@ -96,8 +104,12 @@ def main():
 
 
 if __name__ == "__main__":
+
+    config_path = "config.json"
+    config = read_config(config_path)
+
     red = Pin(RED_GPIO, Pin.OUT)
     yellow = Pin(YELLOW_GPIO, Pin.OUT)
     green = Pin(GREEN_GPIO, Pin.OUT)
     lights = [red, yellow, green]
-    main()
+    main(config)

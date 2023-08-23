@@ -1,0 +1,5 @@
+{
+    "TOGGLE_GREEN_LT": 0.1,
+    "TOGGLE_RED_GT": 0.2,
+    "THRESHOLD": 0.02
+}

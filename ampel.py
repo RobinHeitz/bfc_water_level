@@ -2,8 +2,8 @@ from machine import Pin
 from time import sleep
 
 RED = 2
-YELLOW = 3
-GREEN = 4
+YELLOW = 1
+GREEN = 0
 
 def get_pins():
     p_red = Pin(RED, Pin.OUT)
