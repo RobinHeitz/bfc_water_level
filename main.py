@@ -2,6 +2,7 @@ import micropython
 import utime
 from machine import Pin
 from helpers.read_config import read_config
+from sensors.ultrasonic_sensor import UltrasonicDistanceMeasurement
 import urequests
 import ujson
 
@@ -17,48 +18,6 @@ THRESHOLD_KEY = "THRESHOLD"
 RED_GPIO = 2
 YELLOW_GPIO = 1
 GREEN_GPIO = 0
-
-TRIGGER_GPIO = 28
-ECHO_GPIO = 22
-
-SOUND_VELOCITY_M_S = 343
-
-
-class UltrasonicDistanceMeasurement:
-    def __init__(self, n_samples = 0):
-        self.process_echo = self._process_echo
-        self.trigger = Pin(TRIGGER_GPIO, Pin.OUT)
-        self.echo = Pin(ECHO_GPIO, Pin.IN, Pin.PULL_DOWN)
-        self.echo_start = None
-        self.distance_m = None
-        self.echo.irq(
-            self.irq_callback, Pin.IRQ_RISING | Pin.IRQ_FALLING, hard=True
-        )
-        self.n_samples = n_samples
-        self.distance_list = []
-
-
-    def _process_echo(self, echo_end):
-        diff = utime.ticks_diff(echo_end, self.echo_start)
-        self.distance_m = SOUND_VELOCITY_M_S * (diff / 1e6) / 2
-        if self.n_samples > 0:
-            if len(self.distance_list) == self.n_samples:
-                self.distance_list.pop(0)
-            self.distance_list.append(self.distance_m)
-    
-
-    def irq_callback(self, pin):
-        if pin.value():
-            self.echo_start = utime.ticks_us()
-        else:
-            micropython.schedule(self.process_echo, utime.ticks_us())
-
-
-    def start_measurement(self):
-        self.distance_m = None
-        self.trigger.on()
-        utime.sleep_us(10)
-        self.trigger.off()
 
 
 def off():
@@ -118,8 +77,8 @@ def main(config):
     TOGGLE_RED_GT = config.get(TOGGLE_RED_GT_KEY, 0.2)
     THRESHOLD = config.get(THRESHOLD_KEY, 0.02)
 
-    post_data_frequency = 10
-    post_data_counter = 1
+    post_data_frequency = 100
+    post_data_counter = 0
 
 
     try:
@@ -127,11 +86,11 @@ def main(config):
             median_measurement = sample_measurements(sensor)
             update_lights(median_measurement, TOGGLE_GREEN_LT, TOGGLE_RED_GT, THRESHOLD)
             if post_data_counter == post_data_frequency:
-                post_sensor_data(median_measurement)
                 post_data_counter = 0
+                post_sensor_data(median_measurement)
             
             post_data_counter += 1
-            utime.sleep(1)
+            utime.sleep(0.1)
     
     
     except Exception:

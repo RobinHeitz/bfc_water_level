@@ -18,9 +18,14 @@ def blink_1hz():
     nop()                       [29]
     jmp(x_dec, "delay_low")
 
+
+
 # Create and start a StateMachine with blink_1hz, outputting on Pin(25)
-sm = rp2.StateMachine(0, blink_1hz, freq=2000, set_base=Pin(25))
+rp2.PIO(0).remove_program()
+sm = rp2.StateMachine(0, blink_1hz, freq=2000, set_base=Pin(2))
 sm.active(1)
 
-time.sleep(5)
+time.sleep(2.2)
 print("End")
+sm.active(0)
+sm.exec('set(pins, 0)')
