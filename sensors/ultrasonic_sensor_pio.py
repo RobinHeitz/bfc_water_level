@@ -22,54 +22,34 @@ SOUND_VELOCITY_M_S = 343
 micropython.alloc_emergency_exception_buf(100)
 
 
-    # let trigger_program = pio_proc::pio_asm!(
-    #     ".wrap_target",
-    #     "set pins, 1 [31]",
-    #     "set pins, 0 [31]",
-    #     "mov y !null",
-    #     "wait 1 pin 0",
-    #     "count:",
-    #     "jmp y-- decrement",
-    #     "decrement:",
-    #     "jmp pin count",
-    #     "mov isr y",
-    #     "push block" ,
-    #     ".wrap"
-    # );
-    # mov(y, ~null)
-    # mov(isr, y)
-    # push()
-
-
-@rp2.asm_pio(autopush=True, set_init=rp2.PIO.OUT_LOW, out_init=rp2.PIO.OUT_LOW)
+@rp2.asm_pio(set_init=rp2.PIO.OUT_LOW, out_init=rp2.PIO.OUT_LOW)
 def measure_distance():
     wrap_target()
 
-    set(pins, 1) [9]     # lasts 10 us
+    set(pins, 1) [19]     # lasts 10 us
     set(pins, 0)
-    mov(y, ~null)           # y's value is: 4_294_967_295
-    wait(1, pins, 0)        # wait until input pin at location 0 is HIGH
-    
-    
+    mov(y, 31)           # y's value is: 4_294_967_295
+    wait(1, pin, 0)        # wait until input pin at location 0 is HIGH
     label("count")
     jmp(y_dec, "decrement")
     label("decrement")
-    jmp(pins, "count")
+    jmp(pin, "count")
     mov(isr, y)
     push()
-
     wrap()
-
 
 def main(sm:rp2.StateMachine):
     """Read the output FIFO."""
 
     while True:
-        print(sm.get())
+        
+        diff = 2**32 - 1 - sm.get()
 
+        print(diff)
+        time.sleep(0.1)
 
 if __name__ == "__main__":
     rp2.PIO(0).remove_program()
-    sm = rp2.StateMachine(0, measure_distance, freq=1_000_000, set_base=Pin(TRIGGER_GPIO, Pin.OUT), in_base=Pin(ECHO_GPIO, Pin.IN))
+    sm = rp2.StateMachine(0, measure_distance, freq=2_000_000, set_base=Pin(TRIGGER_GPIO, Pin.OUT), in_base=Pin(ECHO_GPIO, Pin.IN), jmp_pin=Pin(ECHO_GPIO))
     sm.active(1)
     main(sm)
