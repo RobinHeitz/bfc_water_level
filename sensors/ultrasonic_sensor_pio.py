@@ -41,12 +41,14 @@ micropython.alloc_emergency_exception_buf(100)
     # push()
 
 
-@rp2.asm_pio(set_init=rp2.PIO.IN_HIGH, autopull=True, autopush=True)
+@rp2.asm_pio(autopush=True, set_init=rp2.PIO.OUT_LOW, out_init=rp2.PIO.OUT_LOW)
 def measure_distance():
-    mov(y, 31)           # y's value is: 4_294_967_295
-    set(pins, 1) [9]
+    wrap_target()
+
+    set(pins, 1) [9]     # lasts 10 us
     set(pins, 0)
-    # wait(1, gpio, 22)        # wait until input pin at location 0 is HIGH
+    mov(y, ~null)           # y's value is: 4_294_967_295
+    wait(1, pins, 0)        # wait until input pin at location 0 is HIGH
     
     
     label("count")
@@ -56,6 +58,7 @@ def measure_distance():
     mov(isr, y)
     push()
 
+    wrap()
 
 
 def main(sm:rp2.StateMachine):
@@ -64,18 +67,9 @@ def main(sm:rp2.StateMachine):
     while True:
         print(sm.get())
 
-    time.sleep(1)
-    value = sm.get()
-    print("WE GOT: ", value)
-    
 
 if __name__ == "__main__":
     rp2.PIO(0).remove_program()
-    sm = rp2.StateMachine(0, measure_distance, freq=1_000_000, set_base=Pin(TRIGGER_GPIO), in_base=Pin(ECHO_GPIO), out_base=Pin(ECHO_GPIO))
+    sm = rp2.StateMachine(0, measure_distance, freq=1_000_000, set_base=Pin(TRIGGER_GPIO, Pin.OUT), in_base=Pin(ECHO_GPIO, Pin.IN))
     sm.active(1)
-    try:
-        main(sm)
-    except KeyboardInterrupt:
-        print("Shutdown")
-        sm.active(0)
-        # machine.reset()
+    main(sm)

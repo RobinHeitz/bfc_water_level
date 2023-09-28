@@ -10,7 +10,7 @@ def test_output():
     # Cycles: 1 + 7 + 32 * (30 + 1) = 1000
     
     #mov(y, 31) will set y to 32 bits = 2^32 -1 = 4_294_967_295
-    mov(y, 8) # for 8, y has the value 2^32 - 2^(32-8-1) -1 = 2^32 - 2^23 - 1 = 4_286_578_687
+    mov(y, ~null) # for 8, y has the value 2^32 - 2^(32-8-1) -1 = 2^32 - 2^23 - 1 = 4_286_578_687
     mov(isr, y)
     push()
 
@@ -25,4 +25,4 @@ sm.active(1)
 time.sleep(1)
 print(sm.get())
 sm.active(0)
-machine.reset()
+# machine.reset()
