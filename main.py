@@ -2,7 +2,7 @@ import micropython
 import utime
 from machine import Pin
 from helpers.read_config import read_config
-from sensors.ultrasonic_sensor import UltrasonicDistanceMeasurement
+from sensors.ultrasonic_sensor_pio import UltraSonicMeasurementPIO
 import urequests
 import ujson
 
