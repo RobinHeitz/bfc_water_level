@@ -5,11 +5,8 @@ import micropython
 import machine
 
 """
-Pico runs at 125 MHz. The min. state machine (sm) frequency is 1908 Hz.
-If the frequency is set to 1MHz, it should result in one cycle every 1 us, thats enough accuracy.
-
 TRIGGER     -> Set pin
-ECHO        -> Input pin
+ECHO        -> Input pin / Jump pin
 
 - Set trigger to HIGH for 10us
 - Count duration of ECHO beeing HIGH
@@ -43,26 +40,81 @@ def measure_distance():
     wrap()
 
 
-def calc_dist_m(time_sec_both_ways):
-    return SOUND_VELOCITY_M_S * time_sec_both_ways / 2
+def median(values):
+    num_vals = len(values)
+    values_sorted = sorted(values)
+    indx = num_vals // 2
+    if num_vals % 2 == 1:
+        return values_sorted[indx]
+    else:
+        mean_val = 0.5 * (values_sorted[indx] + values_sorted[indx + 1])
+        return mean_val
 
 
-def main(sm:rp2.StateMachine):
-    """Read the output FIFO."""
+class UltraSonicMeasurementPIO:
+
+    def __init__(self, trigger_gpio=TRIGGER_GPIO, echo_gpio=ECHO_GPIO, freq=FREQUENCY):
+        self.freq = freq
+        self.trigger=Pin(trigger_gpio)
+        self.echo=Pin(echo_gpio)
+
+        attrs = dict(
+            freq=self.freq, 
+            set_base=self.trigger,
+            in_base=self.echo,
+            jmp_pin=self.echo
+        )
+
+        rp2.PIO(0).remove_program()
+        self.sm = rp2.StateMachine(0, measure_distance, **attrs)
+        self.sm.active(1)
+        time.sleep_ms(100)
+
+
+    def _calc_dist_m(self, time_sec_both_ways):
+        return SOUND_VELOCITY_M_S * time_sec_both_ways / 2
+    
+
+    def _num_pio_asm_loops(self):
+        """
+        The state machines register starts at 2^32 - 1. In each loop of the PIO assembler instructions, 
+        the register is decreased by 1 as long the echo pin is high.
+        Afterwards the current register value is pushed to the ISR. The number of loop iterations is:
+        2^32 - 1 - <register value>.
+        """
+        return 2**32 - 1 - self.sm.get()
+    
+
+    def _echo_time(self, num_loop_cycles):
+        """Each loop cycle lasts 2 instructions, meaning that the actual time the echo is high is calculated by 
+        <num-of-loop-iterations> * 2 * <cycle-time>"""
+        return num_loop_cycles * 2 * (1 / self.freq)
+
+
+    def get_distance(self):
+        """
+        Each cycle is 1 / freq long. We have 2 cycles per step difference, meaning that the actual time the echo is high
+        is calculated by <number-of-steps> * 2 * <cycle-time>."""
+        num_iters = self._num_pio_asm_loops()
+        echo_time = self._echo_time(num_iters)
+        dist_m = self._calc_dist_m(echo_time)
+        return dist_m
+    
+
+    def get_distance_median(self, num_iters=5):
+
+        values = [self._num_pio_asm_loops() for _ in range(num_iters)]
+        num_loop_iters_median = median(values)
+        echo_time = self._echo_time(num_loop_iters_median)
+        return self._calc_dist_m(echo_time)
+
+
+def main():
+    sensor = UltraSonicMeasurementPIO()
 
     while True:
-        
-        diff_step = 2**32 - 1 - sm.get() # 2^32 -1 is the start value of the state machine's register
-        # each cycle lasts 1/freq = 0.5 us
-        # We have 2 cycles per diff_step
-        echo_time = diff_step * 2 * (1 / FREQUENCY)  # diff_steps * num_cycles_per_step * cycle_time 
-        dist_m = calc_dist_m(echo_time)
-
-        print(dist_m)
-        time.sleep(0.1)
+        print(sensor.get_distance_median())
+        # time.sleep_ms(100)
 
 if __name__ == "__main__":
-    rp2.PIO(0).remove_program()
-    sm = rp2.StateMachine(0, measure_distance, freq=FREQUENCY, set_base=Pin(TRIGGER_GPIO, Pin.OUT), in_base=Pin(ECHO_GPIO, Pin.IN), jmp_pin=Pin(ECHO_GPIO))
-    sm.active(1)
-    main(sm)
+    main()
