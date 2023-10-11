@@ -56,6 +56,7 @@ class UltraSonicMeasurement:
             utime.sleep_us(10)
             self.trigger.off()
             utime.sleep_ms(50)
+        
         micropython.schedule(self.dist_cb, self.dist_list)
         
 

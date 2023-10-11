@@ -1,5 +1,12 @@
 {
-    "TOGGLE_GREEN_LT": 0.1,
-    "TOGGLE_RED_GT": 0.2,
-    "THRESHOLD": 0.02
+    "red_gpio":2, 
+    "yellow_gpio":1, 
+    "green_gpio":0, 
+
+    "dist_green_lt": 0.1,
+    "dist_red_gt": 0.2,
+    "threshold": 0.02,
+
+    "post_interval_ms": 600000,
+    "backend_url": "https://smarthome-frontend.onrender.com/bfc/water-lvl/"
 }
