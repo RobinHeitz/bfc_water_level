@@ -4,6 +4,7 @@ import time
 import micropython
 import machine
 from machine import Timer
+from helpers.median import median
 
 """
 TRIGGER     -> Set pin
@@ -38,18 +39,26 @@ def measure_distance():
     jmp(pin, "count")
     mov(isr, y)
     push(noblock)
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+    nop() [29]
+
     wrap()
-
-
-def median(values):
-    num_vals = len(values)
-    values_sorted = sorted(values)
-    indx = num_vals // 2
-    if num_vals % 2 == 1:
-        return values_sorted[indx]
-    else:
-        mean_val = 0.5 * (values_sorted[indx] + values_sorted[indx + 1])
-        return mean_val
 
 
 class UltraSonicMeasurementPIO:
@@ -117,28 +126,12 @@ class UltraSonicMeasurementPIO:
         return self._calc_dist_m(echo_time)
 
 
-def measure_callback(sensor:UltraSonicMeasurementPIO):
-    print("measure_callback")
-    sensor.activate()
-    val = sensor.get_distance_median(10)
-    sensor.deactivate()
-    print("Val = ", val)
-    
-
-
-
 def main():
     sensor = UltraSonicMeasurementPIO()
-    tim = Timer(period=5000, mode=Timer.PERIODIC, callback=lambda t:measure_callback(sensor))
-
+    sensor.activate()
     while True:
-        print(".")
-        time.sleep(1)
-    
-
-    # while True:
-    #     print(sensor.get_distance())
-        # time.sleep_ms(100)
+        print(sensor.get_distance_median(10))
+        time.sleep_ms(10)
 
 if __name__ == "__main__":
     main()
