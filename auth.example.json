@@ -1,0 +1,5 @@
+{
+    "username": "user-or-email",
+    "password": "some-password",
+    "login_url": "https://some-url/to-some-endpoint/"
+}

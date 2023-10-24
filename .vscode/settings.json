@@ -7,12 +7,16 @@
         ".vscode/Pico-W-Stub"
     ],
     "python.analysis.extraPaths": [
-        ".vscode/Pico-W-Stub/stubs"
+        ".vscode/Pico-W-Stub/stubs",
+        ".vscode/Pico-W-Stub"
     ],
     "python.linting.prospectorEnabled": false,
     "python.linting.pylintEnabled": true,
     "[python]": {
         "editor.defaultFormatter": "ms-python.autopep8"
     },
-    "python.formatting.provider": "none"
+    "python.formatting.provider": "none",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none"
+    }
 }
